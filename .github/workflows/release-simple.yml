@@ -1,0 +1,130 @@
+name: Simple Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.1)'
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ github.event.inputs.version }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          release_name: Platonix IDE v${{ github.event.inputs.version }}
+          body: |
+            # Platonix IDE v${{ github.event.inputs.version }}
+            
+            ## What's New
+            - AI-powered code completion with local Ollama integration
+            - Privacy-focused development environment
+            - Custom Platonix Dark theme
+            - Enhanced performance and stability
+            
+            ## Installation
+            Download the appropriate installer for your platform below.
+            
+            ## Getting Started
+            1. Install Ollama from https://ollama.com
+            2. Pull a model: `ollama pull codellama`
+            3. Launch Platonix IDE
+            
+            ## Changelog
+            See [CHANGELOG.md](https://github.com/nexisnetwork/platonix-ide/blob/main/CHANGELOG.md) for detailed changes.
+          draft: false
+          prerelease: false
+
+  build-core-platforms:
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          # Core platforms only
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            build_cmd: "yarn compile && cd .. && tar -czf platonix-ide-linux-x64.tar.gz platonix-ide"
+            artifact_name: platonix-ide-linux-x64.tar.gz
+            asset_content_type: application/gzip
+          
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            build_cmd: "yarn compile"
+            artifact_name: platonix-ide-win32-x64.zip
+            asset_content_type: application/zip
+            
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+            build_cmd: "yarn compile"
+            artifact_name: platonix-ide-darwin-x64.zip
+            asset_content_type: application/zip
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'yarn'
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Update Version
+        run: |
+          npm version ${{ needs.create-release.outputs.version }} --no-git-tag-version
+          node -e "const p = require('./product.json'); p.platonixVersion = '${{ needs.create-release.outputs.version }}'; require('fs').writeFileSync('./product.json', JSON.stringify(p, null, 2));"
+
+      - name: Build
+        run: ${{ matrix.build_cmd }}
+        env:
+          NODE_ENV: production
+
+      - name: Package Linux
+        if: matrix.platform == 'linux'
+        run: |
+          cd ..
+          tar -czf platonix-ide-linux-x64.tar.gz platonix-ide --exclude=node_modules --exclude=.git
+          mv platonix-ide-linux-x64.tar.gz platonix-ide/
+
+      - name: Package Windows
+        if: matrix.platform == 'win32'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path . -DestinationPath platonix-ide-win32-x64.zip -CompressionLevel Optimal
+
+      - name: Package macOS
+        if: matrix.platform == 'darwin'
+        run: |
+          zip -r platonix-ide-darwin-x64.zip . -x "*.git*" -x "*node_modules*"
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./${{ matrix.artifact_name }}
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-${{ matrix.artifact_name }}
+          asset_content_type: ${{ matrix.asset_content_type }}
