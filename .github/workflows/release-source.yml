@@ -1,0 +1,167 @@
+name: Release Source Archives
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get Version
+        id: get_version
+        run: |
+          echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: Platonix IDE v${{ steps.get_version.outputs.version }}
+          body: |
+            # Platonix IDE v${{ steps.get_version.outputs.version }}
+            
+            ## 🎉 What's New
+            - AI-powered code completion with local Ollama integration
+            - Privacy-focused development environment (100% local)
+            - Custom Platonix Dark theme with cyan accents
+            - Multi-platform support (Windows, macOS, Linux)
+            
+            ## 📥 Download & Installation
+            
+            ### Quick Install (Recommended)
+            1. Download the source archive for your platform below
+            2. Extract to your desired location
+            3. Follow platform-specific instructions:
+            
+            **Windows:**
+            ```bash
+            # Extract platonix-ide-windows.zip
+            # Run: yarn install
+            # Run: yarn compile
+            # Run: scripts\code.bat
+            ```
+            
+            **macOS/Linux:**
+            ```bash
+            # Extract platonix-ide-[platform].tar.gz
+            tar -xzf platonix-ide-*.tar.gz
+            cd platonix-ide
+            yarn install
+            yarn compile
+            ./scripts/code.sh
+            ```
+            
+            ## 🚀 Getting Started with AI Features
+            
+            1. **Install Ollama** from https://ollama.com
+            2. **Pull a model**: 
+               ```bash
+               ollama pull codellama
+               ```
+            3. **Launch Platonix IDE** using the scripts above
+            4. **Test AI features**:
+               - Tab completion: Start typing code
+               - Inline edit: Select code + `Ctrl/Cmd+K`
+               - AI chat: Press `Ctrl/Cmd+L`
+            
+            ## 📋 System Requirements
+            - Node.js 18.x or 20.x
+            - Yarn package manager
+            - 4GB RAM minimum
+            - 2GB disk space
+            
+            ## 📚 Documentation
+            - [Development Guide](https://github.com/Nexis-AI/Platonix-IDE/blob/main/docs/DEVELOPMENT.md)
+            - [AI Integration Guide](https://github.com/Nexis-AI/Platonix-IDE/blob/main/docs/AI.md)
+            - [Customization Guide](https://github.com/Nexis-AI/Platonix-IDE/blob/main/docs/customization.md)
+            
+            ## 🐛 Known Issues
+            - First launch may take a few minutes to compile
+            - Windows users need Visual Studio Build Tools for native modules
+            
+            ## 💡 Pro Tip
+            For faster startup, keep `yarn watch` running in a separate terminal!
+          draft: false
+          prerelease: false
+
+  build-archives:
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Source Archives
+        run: |
+          VERSION=${{ needs.create-release.outputs.version }}
+          
+          # Prepare clean source
+          rm -rf .git
+          
+          # Create archives for each platform
+          cd ..
+          
+          # Windows ZIP
+          zip -r platonix-ide-${VERSION}-windows.zip platonix-ide/ \
+            -x "*.DS_Store" \
+            -x "*/.git/*" \
+            -x "*/node_modules/*"
+          
+          # macOS/Linux tar.gz
+          tar --exclude='.DS_Store' \
+              --exclude='.git' \
+              --exclude='node_modules' \
+              -czf platonix-ide-${VERSION}-macos.tar.gz platonix-ide/
+          
+          tar --exclude='.DS_Store' \
+              --exclude='.git' \
+              --exclude='node_modules' \
+              -czf platonix-ide-${VERSION}-linux.tar.gz platonix-ide/
+          
+          # Move archives
+          mv platonix-ide-*.zip platonix-ide-*.tar.gz platonix-ide/
+
+      - name: Upload Windows Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./platonix-ide-${{ needs.create-release.outputs.version }}-windows.zip
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-windows.zip
+          asset_content_type: application/zip
+
+      - name: Upload macOS Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./platonix-ide-${{ needs.create-release.outputs.version }}-macos.tar.gz
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-macos.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Linux Archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./platonix-ide-${{ needs.create-release.outputs.version }}-linux.tar.gz
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-linux.tar.gz
+          asset_content_type: application/gzip
