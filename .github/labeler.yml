@@ -1,0 +1,74 @@
+# Configuration for PR labeler
+# https://github.com/actions/labeler
+
+documentation:
+  - '**/*.md'
+  - 'docs/**'
+  - 'LICENSE*'
+
+frontend:
+  - 'src/vs/workbench/browser/**'
+  - 'src/vs/workbench/contrib/*/browser/**'
+  - '**/*.css'
+  - '**/*.scss'
+  - '**/*.less'
+
+ai-integration:
+  - 'src/vs/workbench/contrib/platonix/**'
+  - '**/llm*'
+  - '**/ai*'
+  - '**/model*'
+
+theme:
+  - 'extensions/theme-*/**'
+  - '**/themes/**'
+  - '**/*theme*.json'
+
+build:
+  - 'build/**'
+  - 'scripts/**'
+  - 'gulpfile.js'
+  - 'package.json'
+  - 'yarn.lock'
+
+ci:
+  - '.github/**'
+  - '.circleci/**'
+  - '.travis.yml'
+  - 'azure-pipelines.yml'
+
+test:
+  - 'test/**'
+  - '**/*.test.ts'
+  - '**/*.test.js'
+  - '**/*.spec.ts'
+  - '**/*.spec.js'
+
+dependencies:
+  - 'package.json'
+  - 'yarn.lock'
+  - 'package-lock.json'
+
+security:
+  - '**/auth*'
+  - '**/security*'
+  - '**/encryption*'
+  - '**/credential*'
+
+platform/windows:
+  - 'src/vs/platform/windows/**'
+  - 'resources/win32/**'
+  - '**/*.bat'
+
+platform/mac:
+  - 'src/vs/platform/darwin/**'
+  - 'resources/darwin/**'
+
+platform/linux:
+  - 'src/vs/platform/linux/**'
+  - 'resources/linux/**'
+  - '**/*.desktop'
+
+extensions:
+  - 'extensions/**'
+  - 'src/vs/workbench/api/**'

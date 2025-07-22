@@ -1,0 +1,72 @@
+{
+  "name": "Platonix Design System - Dark Mode",
+  "mode": "dark",
+  "tokens": {
+    "colors": {
+      "background": "#121212",
+      "foreground": "#e2e8f0",
+      "card": "#171717",
+      "cardForeground": "#e2e8f0",
+      "popover": "#242424",
+      "popoverForeground": "#a9a9a9",
+      "primary": "#00b8db",
+      "primaryForeground": "#171717",
+      "secondary": "#222425",
+      "secondaryForeground": "#fafafa",
+      "muted": "#1f1f1f",
+      "mutedForeground": "#a2a2a2",
+      "accent": "#171717",
+      "accentForeground": "#fafafa",
+      "destructive": "#541c15",
+      "destructiveForeground": "#ede9e8",
+      "border": "#292929",
+      "input": "#242424",
+      "ring": "#00d3f2",
+      "chart1": "#00a6f4",
+      "chart2": "#155dfc",
+      "chart3": "#5ee9b5",
+      "chart4": "#53eafd",
+      "chart5": "#00d3f2",
+      "sidebar": "#121212",
+      "sidebarForeground": "#898989",
+      "sidebarPrimary": "#00bcff",
+      "sidebarPrimaryForeground": "#dde8e3",
+      "sidebarAccent": "#313131",
+      "sidebarAccentForeground": "#fafafa",
+      "sidebarBorder": "#292929",
+      "sidebarRing": "#00bcff"
+    },
+    "fonts": {
+      "sans": "Outfit, sans-serif",
+      "serif": "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif",
+      "mono": "monospace"
+    },
+    "radius": {
+      "sm": "0.25rem",
+      "md": "0.375rem",
+      "lg": "0.5rem",
+      "xl": "0.75rem"
+    },
+    "shadows": {
+      "2xs": "0px 1px 3px 0px rgba(0, 0, 0, 0.09)",
+      "xs": "0px 1px 3px 0px rgba(0, 0, 0, 0.09)",
+      "sm": "0px 1px 3px 0px rgba(0, 0, 0, 0.17), 0px 1px 2px -1px rgba(0, 0, 0, 0.17)",
+      "default": "0px 1px 3px 0px rgba(0, 0, 0, 0.17), 0px 1px 2px -1px rgba(0, 0, 0, 0.17)",
+      "md": "0px 1px 3px 0px rgba(0, 0, 0, 0.17), 0px 2px 4px -1px rgba(0, 0, 0, 0.17)",
+      "lg": "0px 1px 3px 0px rgba(0, 0, 0, 0.17), 0px 4px 6px -1px rgba(0, 0, 0, 0.17)",
+      "xl": "0px 1px 3px 0px rgba(0, 0, 0, 0.17), 0px 8px 10px -1px rgba(0, 0, 0, 0.17)",
+      "2xl": "0px 1px 3px 0px rgba(0, 0, 0, 0.43)"
+    },
+    "tracking": {
+      "tighter": "-0.025em",
+      "tight": "0em",
+      "normal": "0.025em",
+      "wide": "0.05em",
+      "wider": "0.075em",
+      "widest": "0.1em"
+    },
+    "spacing": {
+      "base": "0.25rem"
+    }
+  }
+}

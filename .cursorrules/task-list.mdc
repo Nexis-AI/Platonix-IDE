@@ -1,0 +1,160 @@
+---
+alwaysApply: true
+---
+
+Here is a production-ready task list in Markdown format for building Platonix IDE, based on forking and customizing the Void IDE, integrating AI, and enabling advanced developer features:
+
+⸻
+
+📘 Platonix IDE — AI-Powered Coding Environment
+
+A development task list for building a next-generation open-source AI coding IDE.
+
+✅ Phase 1: Fork & Build Environment Setup
+
+🔹 Task 1: Clone & Prepare Repository
+	•	Fork the base repository: https://github.com/nexisdev/void.git
+	•	Clone your fork locally:
+
+git clone https://github.com/YOUR_USERNAME/void.git platonix
+cd platonix
+
+
+
+🔹 Task 2: Install Dependencies
+	•	Install Node.js v18+ and Yarn:
+
+nvm install 18
+npm install -g yarn
+yarn install
+
+
+	•	Platform-specific tools:
+	•	Mac: xcode-select --install
+	•	Windows: Install Visual Studio 2022 with:
+	•	C++ Desktop Development
+	•	MSVC v143, ATL/MFC, Spectre Mitigations
+	•	Linux: Ensure build-essential, node-gyp, and Python are installed
+
+🔹 Task 3: Build & Launch IDE
+	•	Development Mode:
+
+yarn run watch
+./scripts/code.sh    # Mac/Linux
+./scripts/code.bat   # Windows
+
+
+	•	Production Build (optional):
+
+yarn run build
+
+
+
+⸻
+
+🎨 Phase 2: Branding & Theme Customization
+
+🔹 Task 4: Rename IDE to “Platonix”
+	•	Update product name and metadata in:
+	•	product.json
+	•	package.json
+	•	Splash screen, About modal, and any hardcoded references
+
+🔹 Task 5: Add Branding Assets
+	•	Replace icons and logos in:
+	•	resources/
+	•	src/vs/workbench/browser/parts/titlebar/media/
+	•	Add custom themes or modify existing ones:
+	•	Use VS Code Theme Color Reference
+
+⸻
+
+🧠 Phase 3: AI Agent Integration
+
+🔹 Task 6: Install & Configure Ollama
+	•	Install Ollama:
+
+curl -fsSL https://ollama.com/install.sh | sh
+
+
+	•	Pull an LLM model (e.g. CodeLlama):
+
+ollama pull codellama
+
+
+
+🔹 Task 7: Connect Ollama to IDE
+	•	Modify settings.json or agent config:
+
+{
+  "void.ai.model": "codellama",
+  "void.ai.endpoint": "http://localhost:11434"
+}
+
+
+	•	Add toggle in UI or settings panel for switching models
+
+⸻
+
+⚙️ Phase 4: AI Features & Extensions
+
+🔹 Task 8: Implement Key AI Features
+	•	Tab-based Autocomplete
+	•	Inline Editing (Trigger: Ctrl+K)
+	•	Contextual Prompt Query (Trigger: Ctrl+L)
+	•	AI-Powered Search (Command Palette)
+	•	Optional: Code explanation + comment generation feature
+
+🔹 Task 9: Extension Support & Injection
+	•	Test compatibility with VS Code extensions
+	•	Create a default install list:
+	•	CodeGPT
+	•	HuggingFace Integration
+	•	Custom Agent Workflow Panel
+
+⸻
+
+📚 Phase 5: Documentation & Distribution
+
+🔹 Task 10: Create Documentation Files
+	•	README.md: Overview, install, usage, branding
+	•	CONTRIBUTING.md: Contribution guidelines
+	•	docs/AI.md: AI integration setup
+	•	docs/customization.md: UI + branding changes
+
+🔹 Task 11: Add Build Scripts (Optional)
+	•	Shell or Node.js script to auto-setup branding, model config, and default extensions
+
+🔹 Task 12: Prepare for Release
+	•	Update version and changelog
+	•	Create GitHub Release / Tag
+	•	Export .deb, .dmg, or .exe if needed (Electron packagers)
+
+⸻
+
+🔍 Phase 6: Agent Usage & Prompt Templates
+
+🔹 Task 13: Create AI Prompts for Development Agents
+	•	“Rename branding across entire codebase”
+	•	“Inject code completion trigger for Ctrl+K”
+	•	“Analyze workbench folder for AI menu points”
+	•	“Create Ollama config script for settings integration”
+	•	“Generate test suite for inline editor suggestions”
+
+⸻
+
+🧪 Phase 7: Testing & Validation
+
+🔹 Task 14: Feature Testing
+	•	Validate autocomplete and inline edits
+	•	Test Ollama model response with local prompts
+	•	Ensure privacy-first operation (no network calls)
+
+🔹 Task 15: User Acceptance Testing (UAT)
+	•	Install and test on Mac, Windows, Linux
+	•	Share beta with selected testers
+	•	Collect feedback and iterate
+
+⸻
+
+Would you like this exported to .mdc format for Claude agents or a .json variant for workflow automation?

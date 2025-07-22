@@ -1,0 +1,114 @@
+---
+alwaysApply: true
+---
+# Project: Platonix IDE
+# Description: Build a fully branded, AI-integrated coding IDE by forking and customizing the Void editor.
+# Format: .mdc — Model Development Command File
+# Mode: Ultrathink / Claude-4-Opus / Full Pipeline
+
+[meta]
+project_name = "Platonix IDE"
+source_repo = "https://github.com/nexisdev/void.git"
+license = "MIT"
+target_platforms = ["macOS", "Windows", "Linux"]
+ai_provider = "Ollama"
+models = ["codellama", "mistral"]
+estimated_time = "2-3 days (MVP), 5 days (full branding + AI integration)"
+
+[phases]
+
+[[phase]]
+id = "phase_1_setup"
+name = "Fork and Setup Build Environment"
+tasks = [
+  "Fork https://github.com/nexisdev/void.git to GitHub under org/project namespace",
+  "Clone the forked repo and rename folder to platonix",
+  "Install Node.js (v18+), Yarn, and required system dependencies",
+  "Run `yarn install` in root directory",
+  "Run `yarn run watch` for dev mode, `yarn run build` for prod",
+  "Launch using `./scripts/code.sh` (Unix) or `code.bat` (Windows)",
+  "Ensure build runs on all three platforms: macOS, Windows, Linux"
+]
+
+[[phase]]
+id = "phase_2_branding"
+name = "Rebranding and UI Customization"
+tasks = [
+  "Update all instances of 'Void' to 'Platonix IDE' in codebase",
+  "Edit product.json and package.json with new branding",
+  "Replace all logos and icons in `resources/` and titlebar directories",
+  "Design and apply custom theme (light/dark) using VS Code theme spec"
+]
+
+[[phase]]
+id = "phase_3_ai_integration"
+name = "Local LLM AI Integration"
+tasks = [
+  "Install Ollama via shell script: `curl -fsSL https://ollama.com/install.sh | sh`",
+  "Pull base models: `ollama pull codellama`",
+  "Configure settings.json to use local endpoint and model",
+  "Inject Ollama client logic into AI features of Void core",
+  "Create toggle in UI for model selection and inference"
+]
+
+[[phase]]
+id = "phase_4_ai_features"
+name = "Inject AI-Powered IDE Features"
+tasks = [
+  "Implement tab-based autocomplete powered by Ollama",
+  "Add inline editing shortcut (Ctrl+K)",
+  "Enable contextual query mode (Ctrl+L)",
+  "Integrate intelligent search and quick fixes via LLM",
+  "Optional: Add inline code summarization/comment generation"
+]
+
+[[phase]]
+id = "phase_5_extensions"
+name = "VS Code Extension Support"
+tasks = [
+  "Ensure compatibility with standard VS Code extensions",
+  "Bundle default extensions: CodeGPT, HuggingFace AI tools",
+  "Inject Platonix-specific extension registry or marketplace support"
+]
+
+[[phase]]
+id = "phase_6_docs"
+name = "Documentation and Automation"
+tasks = [
+  "Generate README.md with full instructions and credits",
+  "Write AI setup guide under `docs/AI.md`",
+  "Add customization guide to `docs/customization.md`",
+  "Create onboarding script to automate initial build + config",
+  "Optional: Generate user manual or onboarding modal"
+]
+
+[[phase]]
+id = "phase_7_validation"
+name = "Testing and UX Review"
+tasks = [
+  "Test all features across macOS, Windows, Linux environments",
+  "Test fallback modes if Ollama is unavailable",
+  "Validate AI commands with known prompts",
+  "Review UX of AI UI elements (modals, in-editor responses)",
+  "Collect feedback from beta testers and adjust accordingly"
+]
+
+[[phase]]
+id = "phase_8_agent_prompts"
+name = "Prompt Engineering for Dev Agents"
+tasks = [
+  "Generate Claude prompt: Rename all instances of ‘Void’ to ‘Platonix IDE’",
+  "Generate prompt: Inject Ctrl+K handler to trigger LLM completion inline",
+  "Generate prompt: Add settings panel toggle for selecting AI models",
+  "Generate prompt: Create test suite for autocomplete and inline editing"
+]
+
+[resources]
+links = [
+  "https://ollama.com",
+  "https://github.com/voideditor/void",
+  "https://code.visualstudio.com/api/references/theme-color",
+  "https://huggingface.co/docs/transformers",
+  "https://ollama.com/library/codellama",
+  "https://code.visualstudio.com/docs/extensions/example-helloworld"
+]

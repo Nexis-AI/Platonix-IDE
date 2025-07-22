@@ -1,0 +1,280 @@
+{
+  "projectName": "Platonix IDE",
+  "projectDescription": "A privacy-focused, AI-powered coding IDE based on the Void open-source editor. This blueprint outlines the full process of forking, rebranding, and customizing the IDE with local LLM integration via Ollama.",
+  "sourceRepository": "https://github.com/nexisdev/void.git",
+  "targetPlatforms": ["macOS", "Windows", "Linux"],
+  "license": "MIT",
+  "devTimeEstimates": {
+    "initialSetupAndBuild": "1-2 hours",
+    "brandingAndTheme": "2-3 hours",
+    "aiIntegrationMVP": "1 day",
+    "featureImplementation": "1 day",
+    "documentationAndReleasePrep": "1 hour",
+    "totalMVPEstimate": "1-2 days"
+  },
+  "technicalStack": {
+    "baseFramework": "VS Code Fork (Void)",
+    "languages": ["TypeScript", "JavaScript", "HTML", "CSS"],
+    "buildTools": {
+      "runtime": "Node.js v18+",
+      "packageManager": "Yarn",
+      "compiler": "TypeScript Compiler",
+      "nativeModules": "node-gyp"
+    },
+    "aiIntegration": {
+      "provider": "Ollama",
+      "endpoint": "http://localhost:11434",
+      "defaultModels": ["codellama", "mistral", "phi3"],
+      "configFile": "src/vs/platform/product/common/product.json"
+    }
+  },
+  "environmentSetup": {
+    "preRequisites": [
+      {"tool": "Git", "url": "https://git-scm.com/downloads"},
+      {"tool": "Node.js v18+", "url": "https://nodejs.org/"},
+      {"tool": "Yarn", "command": "npm install -g yarn"}
+    ],
+    "platformSpecific": {
+      "macOS": {
+        "name": "macOS Setup",
+        "instructions": "Install Xcode Command Line Tools.",
+        "command": "xcode-select --install"
+      },
+      "windows": {
+        "name": "Windows Setup",
+        "instructions": "Install Visual Studio 2022 Community Edition with 'Desktop development with C++' workload. Ensure MSVC v143 or later, C++ ATL/MFC, and Windows 11 SDK are selected.",
+        "url": "https://visualstudio.microsoft.com/downloads/"
+      },
+      "linux": {
+        "name": "Linux Setup",
+        "instructions": "Install essential build tools and Python.",
+        "command": "sudo apt-get install -y build-essential g++ libx11-dev libxkbfile-dev libsecret-1-dev python3-dev"
+      }
+    }
+  },
+  "developmentPhases": [
+    {
+      "phaseId": "phase_1_fork_and_build",
+      "phaseName": "Fork, Clone & Initial Build",
+      "description": "Set up the foundational codebase by forking the upstream repository and ensuring a successful initial build on the local machine.",
+      "tasks": [
+        {
+          "taskId": "1.1",
+          "description": "Fork the repository `https://github.com/nexisdev/void.git` to your own GitHub account or organization.",
+          "status": "pending"
+        },
+        {
+          "taskId": "1.2",
+          "description": "Clone your forked repository to a local directory named `platonix`.",
+          "command": "git clone https://github.com/nexisdev/void.git platonix && cd platonix",
+          "status": "pending"
+        },
+        {
+          "taskId": "1.3",
+          "description": "Install all project dependencies using Yarn.",
+          "command": "yarn install",
+          "status": "pending"
+        },
+        {
+          "taskId": "1.4",
+          "description": "Run the development watcher to compile the source code in real-time.",
+          "command": "yarn run watch",
+          "status": "pending"
+        },
+        {
+          "taskId": "1.5",
+          "description": "Launch the IDE in development mode to confirm the build was successful.",
+          "command": {
+            "unix": "./scripts/code.sh",
+            "windows": ".\\scripts\\code.bat"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "phaseId": "phase_2_branding",
+      "phaseName": "Branding & UI Customization",
+      "description": "Rebrand the application from 'Void' to 'Platonix IDE', including names, logos, icons, and color themes.",
+      "tasks": [
+        {
+          "taskId": "2.1",
+          "description": "Update the application name and metadata in `product.json` and `package.json`.",
+          "files": ["product.json", "package.json"],
+          "status": "pending"
+        },
+        {
+          "taskId": "2.2",
+          "description": "Perform a codebase-wide search and replace for all instances of 'Void' and 'void' (case-sensitive) to 'Platonix IDE' and 'platonix' respectively.",
+          "status": "pending"
+        },
+        {
+          "taskId": "2.3",
+          "description": "Replace application icons and logos. Target files are typically located in `resources/` and `src/vs/workbench/browser/parts/titlebar/media/`.",
+          "iconPaths": {
+            "mac": "resources/darwin/code.icns",
+            "linux": "resources/linux/code.png",
+            "windows": "resources/win32/code.ico"
+          },
+          "status": "pending"
+        },
+        {
+          "taskId": "2.4",
+          "description": "Design and implement a custom light and dark theme. Create a new theme extension or modify existing theme files.",
+          "reference": "https://code.visualstudio.com/api/references/theme-color",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "phaseId": "phase_3_ai_integration",
+      "phaseName": "AI Agent Integration (Ollama)",
+      "description": "Integrate the local AI runtime Ollama to power intelligent features.",
+      "tasks": [
+        {
+          "taskId": "3.1",
+          "description": "Install Ollama on the development machine.",
+          "command": "curl -fsSL https://ollama.com/install.sh | sh",
+          "status": "pending"
+        },
+        {
+          "taskId": "3.2",
+          "description": "Pull the required LLM models for coding and general tasks.",
+          "command": "ollama pull codellama && ollama pull mistral",
+          "status": "pending"
+        },
+        {
+          "taskId": "3.3",
+          "description": "Modify the IDE's configuration to point to the local Ollama endpoint and set a default model. This is often in `product.json` or a dedicated settings file.",
+          "configSnippet": {
+            "void.ai.endpoint": "http://localhost:11434",
+            "void.ai.model": "codellama"
+          },
+          "status": "pending"
+        },
+        {
+          "taskId": "3.4",
+          "description": "Inject or modify the core AI service client to communicate with the Ollama API instead of a remote service, ensuring all data remains local.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "phaseId": "phase_4_ai_features",
+      "phaseName": "AI-Powered Feature Implementation",
+      "description": "Build the core AI-driven features that define the Platonix IDE experience.",
+      "tasks": [
+        {
+          "taskId": "4.1",
+          "description": "Implement tab-based autocomplete using suggestions from the Ollama model.",
+          "status": "pending"
+        },
+        {
+          "taskId": "4.2",
+          "description": "Create an inline editing feature triggered by a keybinding (e.g., Ctrl+K). The selected code and an instruction prompt should be sent to the LLM.",
+          "keybinding": "Ctrl+K",
+          "status": "pending"
+        },
+        {
+          "taskId": "4.3",
+          "description": "Implement a contextual query feature (e.g., Ctrl+L) that allows the user to ask questions about the selected code.",
+          "keybinding": "Ctrl+L",
+          "status": "pending"
+        },
+        {
+          "taskId": "4.4",
+          "description": "Enhance the Command Palette search to optionally use the LLM for finding relevant files or commands based on natural language queries.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "phaseId": "phase_5_extensions_and_docs",
+      "phaseName": "Extensions, Documentation & Release",
+      "description": "Finalize the product with default extensions, comprehensive documentation, and release preparation.",
+      "tasks": [
+        {
+          "taskId": "5.1",
+          "description": "Verify compatibility with popular VS Code extensions from the marketplace.",
+          "status": "pending"
+        },
+        {
+          "taskId": "5.2",
+          "description": "Define a list of bundled, pre-installed extensions for a first-class experience (e.g., linters, debuggers).",
+          "suggestedExtensions": ["dbaeumer.vscode-eslint", "ms-python.python", "esbenp.prettier-vscode"],
+          "status": "pending"
+        },
+        {
+          "taskId": "5.3",
+          "description": "Create a comprehensive `README.md` file with project overview, features, and setup instructions.",
+          "status": "pending"
+        },
+        {
+          "taskId": "5.4",
+          "description": "Write detailed guides for AI integration and UI customization in the `docs/` folder.",
+          "files": ["docs/AI-Setup.md", "docs/Customization.md"],
+          "status": "pending"
+        },
+        {
+          "taskId": "5.5",
+          "description": "Create a `CONTRIBUTING.md` file outlining guidelines for community contributions.",
+          "status": "pending"
+        },
+        {
+          "taskId": "5.6",
+          "description": "Prepare for release by updating the version number, writing a changelog, and creating build scripts for distribution packages (.dmg, .exe, .deb).",
+          "status": "pending"
+        }
+      ]
+    }
+  ],
+  "aiAgentPrompts": {
+    "title": "Prompts for AI Development Assistant (SuperClaude/Opus Mode)",
+    "prompts": [
+      {
+        "promptId": "agent_prompt_1",
+        "objective": "Automate Rebranding",
+        "promptText": "Analyze the entire Platonix IDE codebase. Perform a global, case-sensitive search-and-replace operation. Replace all occurrences of 'Void' with 'Platonix IDE' and 'void' with 'platonix'. Exclude files in the `.git` directory. Pay special attention to `product.json`, `package.json`, and any files under `src/vs/workbench/` that might contain hardcoded branding. Provide a list of all modified files."
+      },
+      {
+        "promptId": "agent_prompt_2",
+        "objective": "Implement Inline Edit Logic",
+        "promptText": "In the Platonix IDE codebase, identify the keybinding controller. Register a new command `platonix.inlineEdit` for the key combination `Ctrl+K`. When triggered, this command should: 1. Get the currently selected text and its position from the active editor. 2. Get an instruction from the user via a quick input box. 3. Construct a JSON payload for the Ollama API with the selected code and the instruction. 4. Send the request to `http://localhost:11434/api/generate`. 5. Replace the selected text with the streaming response from the model. Generate the necessary TypeScript code to implement this feature."
+      },
+      {
+        "promptId": "agent_prompt_3",
+        "objective": "Create AI Settings UI",
+        "promptText": "Generate the necessary TypeScript and HTML code to add a new section to the Platonix IDE settings UI. This section, titled 'Platonix AI', should contain: 1. A text input for the Ollama Endpoint URL, defaulting to `http://localhost:11434`. 2. A dropdown menu to select the active AI model (e.g., 'codellama', 'mistral'). 3. A button to test the connection to the Ollama endpoint. Ensure these settings are saved to and read from the user's settings configuration."
+      },
+      {
+        "promptId": "agent_prompt_4",
+        "objective": "Generate Test Suite",
+        "promptText": "Create a test suite using the IDE's testing framework (likely Mocha/Chai) for the AI features. The suite should include tests for: 1. Successful autocomplete suggestion retrieval. 2. Correct replacement of text for the inline edit (Ctrl+K) command. 3. Fallback behavior when the Ollama endpoint is unreachable. 4. Validation of the contextual query (Ctrl+L) prompt and response flow."
+      }
+    ]
+  },
+  "testingAndValidationPlan": {
+    "unitAndIntegrationTests": "Run existing test suites (`yarn test`) and add new tests for all AI features.",
+    "featureValidation": [
+      "Confirm tab-autocomplete provides relevant suggestions in different languages.",
+      "Verify Ctrl+K and Ctrl+L keybindings work and interact with Ollama correctly.",
+      "Check that UI branding (logo, name) is consistent across the entire application.",
+      "Ensure the IDE functions correctly if Ollama is not running (graceful degradation)."
+    ],
+    "userAcceptanceTesting": [
+      "Perform clean installations on all target platforms (macOS, Windows, Linux).",
+      "Share a beta build with a small group of testers.",
+      "Collect feedback on feature usability, performance, and bugs.",
+      "Iterate based on feedback before a public release."
+    ]
+  },
+  "externalResources": [
+    {"name": "Void Source Repo", "url": "https://github.com/nexisnetwork/platonix-ide"},
+    {"name": "Ollama Homepage", "url": "https://ollama.com"},
+    {"name": "Ollama CodeLlama Model", "url": "https://ollama.com/library/codellama"},
+    {"name": "VS Code API Docs", "url": "https://code.visualstudio.com/api"},
+    {"name": "VS Code Theme Color Reference", "url": "https://code.visualstudio.com/api/references/theme-color"},
+    {"name": "Electron Builder (for packaging)", "url": "https://www.electron.build/"},
+    {"name": "Hugging Face Transformers", "url": "https://huggingface.co/docs/transformers"}
+  ]
+}

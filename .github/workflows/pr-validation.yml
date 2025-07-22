@@ -1,0 +1,123 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'yarn'
+
+      - name: Check PR Title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            chore
+            revert
+            ci
+            build
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Check File Size
+        run: |
+          # Check for large files (>1MB)
+          large_files=$(find . -type f -size +1M | grep -v node_modules | grep -v .git || true)
+          if [ ! -z "$large_files" ]; then
+            echo "Large files detected (>1MB):"
+            echo "$large_files"
+            echo "Please consider using Git LFS for large files."
+          fi
+
+      - name: Lint Commit Messages
+        run: |
+          yarn add --dev @commitlint/cli @commitlint/config-conventional
+          echo "module.exports = {extends: ['@commitlint/config-conventional']}" > commitlint.config.js
+          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+      - name: Run Quick Checks
+        run: |
+          # Type check
+          yarn run monaco-compile-check
+          
+          # Lint (sample of files changed)
+          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -E '\.(ts|tsx|js|jsx)$' | head -20 || true)
+          if [ ! -z "$changed_files" ]; then
+            yarn run eslint $changed_files || true
+          fi
+
+      - name: Check Documentation
+        run: |
+          # Check if PR modifies code but not docs
+          code_changes=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -E '\.(ts|tsx|js|jsx)$' | wc -l)
+          doc_changes=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -E '\.(md)$' | wc -l)
+          
+          if [ "$code_changes" -gt 10 ] && [ "$doc_changes" -eq 0 ]; then
+            echo "::warning::This PR contains significant code changes but no documentation updates. Please consider updating relevant documentation."
+          fi
+
+      - name: Security Check
+        run: |
+          # Check for potential secrets
+          yarn add --dev detect-secrets
+          npx detect-secrets scan --baseline .secrets.baseline || true
+          
+          # Audit dependencies
+          yarn audit --groups dependencies --level high || true
+
+  label-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    
+    steps:
+      - name: Label PR by Files Changed
+        uses: actions/labeler@v4
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/labeler.yml
+
+  size-check:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    
+    steps:
+      - name: Add Size Label
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: 'size/XS'
+          xs_max_size: 10
+          s_label: 'size/S'
+          s_max_size: 100
+          m_label: 'size/M'
+          m_max_size: 500
+          l_label: 'size/L'
+          l_max_size: 1000
+          xl_label: 'size/XL'
+          message_if_xl: >
+            This PR is very large! Please consider breaking it into smaller PRs
+            for easier review and testing.

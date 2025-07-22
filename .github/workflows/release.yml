@@ -1,0 +1,208 @@
+name: Release Platonix IDE
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get Version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: Platonix IDE v${{ steps.get_version.outputs.version }}
+          body: |
+            # Platonix IDE v${{ steps.get_version.outputs.version }}
+            
+            ## What's New
+            - AI-powered code completion with local Ollama integration
+            - Privacy-focused development environment
+            - Custom Platonix Dark theme
+            - Enhanced performance and stability
+            
+            ## Installation
+            Download the appropriate installer for your platform below.
+            
+            ## Changelog
+            See [CHANGELOG.md](https://github.com/nexisnetwork/platonix-ide/blob/main/CHANGELOG.md) for detailed changes.
+          draft: false
+          prerelease: false
+
+  build-release:
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            artifact_name: platonix-ide-linux-x64
+            file_extension: .tar.gz
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            artifact_name: platonix-ide-win32-x64
+            file_extension: .exe
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+            artifact_name: platonix-ide-darwin-x64
+            file_extension: .dmg
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+            artifact_name: platonix-ide-darwin-arm64
+            file_extension: .dmg
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'yarn'
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Update Version
+        run: |
+          npm version ${{ needs.create-release.outputs.version }} --no-git-tag-version
+          node -e "const p = require('./product.json'); p.platonixVersion = '${{ needs.create-release.outputs.version }}'; require('fs').writeFileSync('./product.json', JSON.stringify(p, null, 2));"
+
+      - name: Build
+        run: yarn run compile
+        env:
+          NODE_ENV: production
+
+      - name: Install vsce
+        run: yarn global add @vscode/vsce
+
+      - name: Package Linux
+        if: matrix.platform == 'linux'
+        run: |
+          yarn run gulp vscode-linux-${{ matrix.arch }}
+          cd ../VSCode-linux-${{ matrix.arch }}
+          tar -czf platonix-ide-linux-${{ matrix.arch }}.tar.gz *
+          mv platonix-ide-linux-${{ matrix.arch }}.tar.gz ../platonix-ide/
+
+      - name: Package Windows
+        if: matrix.platform == 'win32'
+        shell: pwsh
+        run: |
+          yarn run gulp vscode-win32-${{ matrix.arch }}-inno-updater
+          $installerPath = Get-ChildItem -Path "..\VSCode-win32-${{ matrix.arch }}-inno-updater" -Filter "*.exe" | Select-Object -First 1
+          if ($installerPath) {
+            Move-Item $installerPath.FullName "platonix-ide-setup-${{ matrix.arch }}.exe"
+          }
+
+      - name: Package macOS
+        if: matrix.platform == 'darwin'
+        run: |
+          yarn run gulp vscode-darwin-${{ matrix.arch }}
+          cd ../VSCode-darwin-${{ matrix.arch }}
+          hdiutil create -volname "Platonix IDE" -srcfolder . -ov -format UDZO platonix-ide-darwin-${{ matrix.arch }}.dmg
+          mv platonix-ide-darwin-${{ matrix.arch }}.dmg ../platonix-ide/
+
+      - name: Upload Release Asset (Linux)
+        if: matrix.platform == 'linux'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./platonix-ide-linux-${{ matrix.arch }}.tar.gz
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-linux-${{ matrix.arch }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Release Asset (Windows)
+        if: matrix.platform == 'win32'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./platonix-ide-setup-${{ matrix.arch }}.exe
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-setup-${{ matrix.arch }}.exe
+          asset_content_type: application/x-msdownload
+
+      - name: Upload Release Asset (macOS)
+        if: matrix.platform == 'darwin'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./platonix-ide-darwin-${{ matrix.arch }}.dmg
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-darwin-${{ matrix.arch }}.dmg
+          asset_content_type: application/x-apple-diskimage
+
+  publish-release-notes:
+    needs: [create-release, build-release]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Generate Changelog
+        run: |
+          echo "# Platonix IDE v${{ needs.create-release.outputs.version }} Release Notes" > release-notes.md
+          echo "" >> release-notes.md
+          echo "## Downloads" >> release-notes.md
+          echo "- [Windows x64](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-setup-x64.exe)" >> release-notes.md
+          echo "- [macOS Intel](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-darwin-x64.dmg)" >> release-notes.md
+          echo "- [macOS Apple Silicon](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-darwin-arm64.dmg)" >> release-notes.md
+          echo "- [Linux x64](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-x64.tar.gz)" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "## Installation Instructions" >> release-notes.md
+          echo "1. Download the appropriate installer for your platform" >> release-notes.md
+          echo "2. Install Ollama from https://ollama.com" >> release-notes.md
+          echo "3. Pull a model: \`ollama pull codellama\`" >> release-notes.md
+          echo "4. Launch Platonix IDE and enjoy AI-powered coding!" >> release-notes.md
+
+      - name: Update Release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const releaseNotes = fs.readFileSync('release-notes.md', 'utf8');
+            
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: ${{ needs.create-release.outputs.release_id }},
+              body: releaseNotes
+            });
