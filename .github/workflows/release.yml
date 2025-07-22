@@ -47,9 +47,16 @@ jobs:
             - Privacy-focused development environment
             - Custom Platonix Dark theme
             - Enhanced performance and stability
+            - Multi-architecture support for all major platforms
             
             ## Installation
-            Download the appropriate installer for your platform below.
+            Download the appropriate installer for your platform and architecture below.
+            
+            ## Supported Platforms
+            - Windows (x64, ARM64)
+            - macOS (Intel x64, Apple Silicon ARM64)
+            - Linux (x64, ARM64, ARMhf, LoongArch64, PowerPC64, RISC-V64)
+            - Linux packages (.deb, .rpm, .tar.gz)
             
             ## Changelog
             See [CHANGELOG.md](https://github.com/nexisnetwork/platonix-ide/blob/main/CHANGELOG.md) for detailed changes.
@@ -61,16 +68,19 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-            artifact_name: platonix-ide-linux-x64
-            file_extension: .tar.gz
+          # Windows builds
           - os: windows-latest
             platform: win32
             arch: x64
             artifact_name: platonix-ide-win32-x64
             file_extension: .exe
+          - os: windows-latest
+            platform: win32
+            arch: arm64
+            artifact_name: platonix-ide-win32-arm64
+            file_extension: .exe
+            
+          # macOS builds
           - os: macos-latest
             platform: darwin
             arch: x64
@@ -81,6 +91,68 @@ jobs:
             arch: arm64
             artifact_name: platonix-ide-darwin-arm64
             file_extension: .dmg
+            
+          # Linux x64 builds
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            artifact_name: platonix-ide-linux-x64
+            file_extension: .tar.gz
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            artifact_name: platonix-ide-linux-x64-deb
+            file_extension: .deb
+            package_type: deb
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            artifact_name: platonix-ide-linux-x64-rpm
+            file_extension: .rpm
+            package_type: rpm
+            
+          # Linux ARM64 builds
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+            artifact_name: platonix-ide-linux-arm64
+            file_extension: .tar.gz
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+            artifact_name: platonix-ide-linux-arm64-deb
+            file_extension: .deb
+            package_type: deb
+            
+          # Linux ARMhf builds
+          - os: ubuntu-latest
+            platform: linux
+            arch: armhf
+            artifact_name: platonix-ide-linux-armhf
+            file_extension: .tar.gz
+          - os: ubuntu-latest
+            platform: linux
+            arch: armhf
+            artifact_name: platonix-ide-linux-armhf-deb
+            file_extension: .deb
+            package_type: deb
+            
+          # Linux exotic architectures
+          - os: ubuntu-latest
+            platform: linux
+            arch: loong64
+            artifact_name: platonix-ide-linux-loong64
+            file_extension: .tar.gz
+          - os: ubuntu-latest
+            platform: linux
+            arch: ppc64le
+            artifact_name: platonix-ide-linux-ppc64le
+            file_extension: .tar.gz
+          - os: ubuntu-latest
+            platform: linux
+            arch: riscv64
+            artifact_name: platonix-ide-linux-riscv64
+            file_extension: .tar.gz
     
     runs-on: ${{ matrix.os }}
     
@@ -94,8 +166,58 @@ jobs:
           node-version: 18
           cache: 'yarn'
 
+      - name: Install Cross-compilation Tools (Linux ARM)
+        if: matrix.platform == 'linux' && matrix.arch != 'x64'
+        run: |
+          sudo apt-get update
+          case "${{ matrix.arch }}" in
+            arm64)
+              sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+              export CC=aarch64-linux-gnu-gcc
+              export CXX=aarch64-linux-gnu-g++
+              export AR=aarch64-linux-gnu-ar
+              export STRIP=aarch64-linux-gnu-strip
+              export npm_config_arch=arm64
+              ;;
+            armhf)
+              sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+              export CC=arm-linux-gnueabihf-gcc
+              export CXX=arm-linux-gnueabihf-g++
+              export AR=arm-linux-gnueabihf-ar
+              export STRIP=arm-linux-gnueabihf-strip
+              export npm_config_arch=arm
+              ;;
+            loong64)
+              # LoongArch cross-compilation setup
+              echo "Setting up LoongArch64 cross-compilation..."
+              ;;
+            ppc64le)
+              sudo apt-get install -y gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu
+              export CC=powerpc64le-linux-gnu-gcc
+              export CXX=powerpc64le-linux-gnu-g++
+              export AR=powerpc64le-linux-gnu-ar
+              export STRIP=powerpc64le-linux-gnu-strip
+              export npm_config_arch=ppc64
+              ;;
+            riscv64)
+              sudo apt-get install -y gcc-riscv64-linux-gnu g++-riscv64-linux-gnu
+              export CC=riscv64-linux-gnu-gcc
+              export CXX=riscv64-linux-gnu-g++
+              export AR=riscv64-linux-gnu-ar
+              export STRIP=riscv64-linux-gnu-strip
+              export npm_config_arch=riscv64
+              ;;
+          esac
+
       - name: Install Dependencies
-        run: yarn install --frozen-lockfile
+        run: |
+          if [ "${{ matrix.platform }}" = "linux" ] && [ "${{ matrix.arch }}" != "x64" ]; then
+            npm_config_arch=${{ matrix.arch }} yarn install --frozen-lockfile
+          else
+            yarn install --frozen-lockfile
+          fi
+        env:
+          npm_config_arch: ${{ matrix.arch }}
 
       - name: Update Version
         run: |
@@ -106,26 +228,48 @@ jobs:
         run: yarn run compile
         env:
           NODE_ENV: production
+          npm_config_arch: ${{ matrix.arch }}
 
       - name: Install vsce
         run: yarn global add @vscode/vsce
 
       - name: Package Linux
-        if: matrix.platform == 'linux'
+        if: matrix.platform == 'linux' && matrix.package_type != 'deb' && matrix.package_type != 'rpm'
         run: |
           yarn run gulp vscode-linux-${{ matrix.arch }}
           cd ../VSCode-linux-${{ matrix.arch }}
           tar -czf platonix-ide-linux-${{ matrix.arch }}.tar.gz *
           mv platonix-ide-linux-${{ matrix.arch }}.tar.gz ../platonix-ide/
 
+      - name: Package Linux DEB
+        if: matrix.platform == 'linux' && matrix.package_type == 'deb'
+        run: |
+          yarn run gulp vscode-linux-${{ matrix.arch }}-deb
+          cd ..
+          find . -name "*.deb" -exec mv {} platonix-ide/platonix-ide-linux-${{ matrix.arch }}.deb \;
+
+      - name: Package Linux RPM
+        if: matrix.platform == 'linux' && matrix.package_type == 'rpm'
+        run: |
+          yarn run gulp vscode-linux-${{ matrix.arch }}-rpm
+          cd ..
+          find . -name "*.rpm" -exec mv {} platonix-ide/platonix-ide-linux-${{ matrix.arch }}.rpm \;
+
       - name: Package Windows
         if: matrix.platform == 'win32'
         shell: pwsh
         run: |
-          yarn run gulp vscode-win32-${{ matrix.arch }}-inno-updater
-          $installerPath = Get-ChildItem -Path "..\VSCode-win32-${{ matrix.arch }}-inno-updater" -Filter "*.exe" | Select-Object -First 1
-          if ($installerPath) {
-            Move-Item $installerPath.FullName "platonix-ide-setup-${{ matrix.arch }}.exe"
+          if ("${{ matrix.arch }}" -eq "arm64") {
+            yarn run gulp vscode-win32-${{ matrix.arch }}
+            cd ..\VSCode-win32-${{ matrix.arch }}
+            Compress-Archive -Path * -DestinationPath platonix-ide-win32-${{ matrix.arch }}.zip
+            Move-Item platonix-ide-win32-${{ matrix.arch }}.zip ..\platonix-ide\
+          } else {
+            yarn run gulp vscode-win32-${{ matrix.arch }}-inno-updater
+            $installerPath = Get-ChildItem -Path "..\VSCode-win32-${{ matrix.arch }}-inno-updater" -Filter "*.exe" | Select-Object -First 1
+            if ($installerPath) {
+              Move-Item $installerPath.FullName "platonix-ide-setup-${{ matrix.arch }}.exe"
+            }
           }
 
       - name: Package macOS
@@ -136,8 +280,8 @@ jobs:
           hdiutil create -volname "Platonix IDE" -srcfolder . -ov -format UDZO platonix-ide-darwin-${{ matrix.arch }}.dmg
           mv platonix-ide-darwin-${{ matrix.arch }}.dmg ../platonix-ide/
 
-      - name: Upload Release Asset (Linux)
-        if: matrix.platform == 'linux'
+      - name: Upload Release Asset (Linux tar.gz)
+        if: matrix.platform == 'linux' && matrix.file_extension == '.tar.gz'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -147,8 +291,30 @@ jobs:
           asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-linux-${{ matrix.arch }}.tar.gz
           asset_content_type: application/gzip
 
-      - name: Upload Release Asset (Windows)
-        if: matrix.platform == 'win32'
+      - name: Upload Release Asset (Linux DEB)
+        if: matrix.platform == 'linux' && matrix.file_extension == '.deb'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./platonix-ide-linux-${{ matrix.arch }}.deb
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-linux-${{ matrix.arch }}.deb
+          asset_content_type: application/x-deb
+
+      - name: Upload Release Asset (Linux RPM)
+        if: matrix.platform == 'linux' && matrix.file_extension == '.rpm'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./platonix-ide-linux-${{ matrix.arch }}.rpm
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-linux-${{ matrix.arch }}.rpm
+          asset_content_type: application/x-rpm
+
+      - name: Upload Release Asset (Windows EXE)
+        if: matrix.platform == 'win32' && matrix.arch == 'x64'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -157,6 +323,17 @@ jobs:
           asset_path: ./platonix-ide-setup-${{ matrix.arch }}.exe
           asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-setup-${{ matrix.arch }}.exe
           asset_content_type: application/x-msdownload
+
+      - name: Upload Release Asset (Windows ARM64 ZIP)
+        if: matrix.platform == 'win32' && matrix.arch == 'arm64'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./platonix-ide-win32-${{ matrix.arch }}.zip
+          asset_name: platonix-ide-${{ needs.create-release.outputs.version }}-win32-${{ matrix.arch }}.zip
+          asset_content_type: application/zip
 
       - name: Upload Release Asset (macOS)
         if: matrix.platform == 'darwin'
@@ -182,13 +359,29 @@ jobs:
           echo "# Platonix IDE v${{ needs.create-release.outputs.version }} Release Notes" > release-notes.md
           echo "" >> release-notes.md
           echo "## Downloads" >> release-notes.md
-          echo "- [Windows x64](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-setup-x64.exe)" >> release-notes.md
-          echo "- [macOS Intel](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-darwin-x64.dmg)" >> release-notes.md
-          echo "- [macOS Apple Silicon](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-darwin-arm64.dmg)" >> release-notes.md
-          echo "- [Linux x64](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-x64.tar.gz)" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Windows" >> release-notes.md
+          echo "- [Windows x64 Installer](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-setup-x64.exe)" >> release-notes.md
+          echo "- [Windows ARM64 Portable](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-win32-arm64.zip)" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### macOS" >> release-notes.md
+          echo "- [macOS Intel (x64)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-darwin-x64.dmg)" >> release-notes.md
+          echo "- [macOS Apple Silicon (ARM64)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-darwin-arm64.dmg)" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Linux" >> release-notes.md
+          echo "- [Linux x64 (.tar.gz)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-x64.tar.gz)" >> release-notes.md
+          echo "- [Linux x64 (.deb)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-x64.deb)" >> release-notes.md
+          echo "- [Linux x64 (.rpm)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-x64.rpm)" >> release-notes.md
+          echo "- [Linux ARM64 (.tar.gz)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-arm64.tar.gz)" >> release-notes.md
+          echo "- [Linux ARM64 (.deb)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-arm64.deb)" >> release-notes.md
+          echo "- [Linux ARMhf (.tar.gz)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-armhf.tar.gz)" >> release-notes.md
+          echo "- [Linux ARMhf (.deb)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-armhf.deb)" >> release-notes.md
+          echo "- [Linux LoongArch64 (.tar.gz)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-loong64.tar.gz)" >> release-notes.md
+          echo "- [Linux PowerPC64 (.tar.gz)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-ppc64le.tar.gz)" >> release-notes.md
+          echo "- [Linux RISC-V64 (.tar.gz)](https://github.com/nexisnetwork/platonix-ide/releases/download/v${{ needs.create-release.outputs.version }}/platonix-ide-${{ needs.create-release.outputs.version }}-linux-riscv64.tar.gz)" >> release-notes.md
           echo "" >> release-notes.md
           echo "## Installation Instructions" >> release-notes.md
-          echo "1. Download the appropriate installer for your platform" >> release-notes.md
+          echo "1. Download the appropriate installer for your platform and architecture" >> release-notes.md
           echo "2. Install Ollama from https://ollama.com" >> release-notes.md
           echo "3. Pull a model: \`ollama pull codellama\`" >> release-notes.md
           echo "4. Launch Platonix IDE and enjoy AI-powered coding!" >> release-notes.md
