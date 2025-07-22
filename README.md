@@ -1,7 +1,5 @@
 # Welcome to Platonix IDE
 
-<div data-us-project="QvvzaQrpkr5Hm5d23B5T" style="width:1440px; height: 900px"></div><script type="text/javascript">!function(){if(!window.UnicornStudio){window.UnicornStudio={isInitialized:!1};var i=document.createElement("script");i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.4.29/dist/unicornStudio.umd.js",i.onload=function(){window.UnicornStudio.isInitialized||(UnicornStudio.init(),window.UnicornStudio.isInitialized=!0)},(document.head || document.body).appendChild(i)}}();</script>
-
 **Platonix IDE** is a privacy-focused, AI-powered coding IDE based on Void. It's the open-source alternative to proprietary AI coding assistants.
 
 Use local AI models with Ollama integration, checkpoint and visualize changes, and maintain complete privacy. Platonix runs AI models locally on your machine without sending your code to external servers.
